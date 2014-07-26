@@ -21,10 +21,38 @@ test.makeCacheSet <- function(){
   checkTrue(matrixEquals(m$get(), m1))
 }
 
-## Test: Checks that the returned matrix from CacheSolve is the inverse
-##       by multiplying it my the original matrix and comparing to the
-##       identity matrix
-test.checkInverseMatrix <- function(){
-  ## Check we get the identity matrix
-  checkTrue(matrixEquals(cacheSolve(m1) %*% m1, diag(2)))
+test.makeCacheSetInverse <- function(){
+  m <- makeCacheMatrix()
+  m$set(m1)
+  m$setInverse(solve(m1))
+  ## check against the identity matrix
+  checkTrue(matrixEquals(m$get() %*% m$getInverse(), diag(2)))
+}
+
+## Test: Checks that the inverse is calculated correctly and that it is
+##       cached. Checks by testing original matrix multiplied with its
+##       inverse equals the identity matrix
+test.cacheSolveCached <- function(){
+  m <- makeCacheMatrix()
+  m$set(m1)
+  inv <- cacheSolve(m)
+  ## check inverse(m) * m = identity
+  checkTrue(matrixEquals(inv %*% m$get(), diag(2)))
+  ## check cached inverse(m) * m = identity
+  checkTrue(matrixEquals(m$getInverse() %*% m$get(), diag(2)))
+}
+
+## Test: Checks that if the matrix is changed, the inverse is recomputed
+test.cacheSolveChanged <- function(){
+  m <- makeCacheMatrix()
+  m$set(m1)
+  inv <- cacheSolve(m)
+  ## check cached inverse(m) * m = identity
+  checkTrue(matrixEquals(m$getInverse() %*% m$get(), diag(2)))
+  ## change the original matrix and check that the inverse is NULL
+  m$set(matrix(c(5,6,7,8), nrow=2, ncol=2))
+  checkEquals(m$getInverse(), NULL)
+  ## now check that a new inverse is calculated when asked
+  newinv <- cacheSolve(m)
+  checkTrue(matrixEquals(m$getInverse() %*% m$get(), diag(2)))
 }
